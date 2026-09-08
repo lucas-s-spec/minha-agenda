@@ -231,8 +231,19 @@
   });
 
   function connectGoogleAccount() {
-    const oauthUrl = 'https://lucas-s-spec.github.io/minha-agenda/oauth.html';
-    const popup = window.open(oauthUrl, 'google_oauth_popup', 'width=460,height=560');
+    const clientId = '92440529523-fgo3hm40m24v51mj2u9a1mfs32hki5ca.apps.googleusercontent.com';
+    const redirectUri = 'https://lucas-s-spec.github.io/minha-agenda/oauth.html';
+    const scope = 'https://www.googleapis.com/auth/calendar.events';
+
+    const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: 'token',
+      scope: scope,
+      prompt: 'consent'
+    }).toString();
+
+    const popup = window.open(authUrl, 'google_oauth_popup', 'width=500,height=600');
     if (!popup) {
       alert('Permita a abertura de popups no navegador para autenticar.');
     }
