@@ -2,104 +2,36 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Autenticação Google Calendar</title>
+  <title>Processando autorização...</title>
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: sans-serif;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       height: 100vh;
       margin: 0;
       background: #f8fafc;
       color: #0f172a;
-      text-align: center;
-      padding: 20px;
-      box-sizing: border-box;
     }
-    .box {
-      background: white;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      max-width: 380px;
-      width: 100%;
-    }
-    button {
-      background: #1458ea;
-      color: white;
-      border: 0;
-      padding: 12px 20px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 15px;
-      width: 100%;
-    }
-    button:hover { filter: brightness(0.95); }
-    #msg { font-size: 12px; margin-top: 12px; color: #64748b; word-break: break-word; }
   </style>
 </head>
 <body>
-  <div class="box">
-    <h3 style="margin-top:0">Conectar Google Agenda</h3>
-    <p style="font-size:13px; color:#475569">Clique abaixo para autorizar o acesso aos seus eventos.</p>
-    <button id="btn-login" onclick="startOAuthFlow()">Fazer Login com Google</button>
-    <div id="msg">Pronto para autenticar.</div>
-  </div>
+  <p>Conectando ao Google Agenda... Esta janela fechará em instantes.</p>
 
   <script>
-    const CLIENT_ID = '92440529523-fgo3hm40m24v51mj2u9a1mfs32hki5ca.apps.googleusercontent.com';
-    const REDIRECT_URI = 'https://lucas-s-spec.github.io/minha-agenda/oauth.html';
-    const SCOPES = 'https://www.googleapis.com/auth/calendar.events';
+    const hash = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    const token = params.get('access_token');
 
-    function checkAuthToken() {
-      // Verifica se voltou do Google com o token no hash (#access_token=...)
-      const hash = window.location.hash.substring(1);
-      const params = new URLSearchParams(hash);
-      const token = params.get('access_token');
-      const error = params.get('error');
-
-      if (token) {
-        document.getElementById('msg').innerText = 'Sucesso! Sincronizando com a extensão...';
-        if (window.opener) {
-          window.opener.postMessage({ type: 'GOOGLE_AUTH_SUCCESS', token: token }, '*');
-        }
-        setTimeout(() => {
-          window.close();
-        }, 1000);
-        return true;
+    if (token) {
+      if (window.opener) {
+        window.opener.postMessage({ type: 'GOOGLE_AUTH_SUCCESS', token: token }, '*');
       }
-
-      if (error) {
-        document.getElementById('msg').innerText = 'Erro na autorização: ' + error;
-        return true;
-      }
-
-      return false;
+      setTimeout(() => window.close(), 500);
+    } else {
+      document.body.innerHTML = '<p>Erro na autorização ou token não retornado. Pode fechar esta janela.</p>';
     }
-
-    function startOAuthFlow() {
-      document.getElementById('msg').innerText = 'Redirecionando para o Google...';
-      
-      const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({
-        client_id: CLIENT_ID,
-        redirect_uri: REDIRECT_URI,
-        response_type: 'token',
-        scope: SCOPES,
-        include_granted_scopes: 'true',
-        prompt: 'select_account'
-      }).toString();
-
-      // Navega na própria janela, sem tentar abrir um segundo popup por cima
-      window.location.href = authUrl;
-    }
-
-    window.onload = () => {
-      checkAuthToken();
-    };
   </script>
 </body>
 </html>
