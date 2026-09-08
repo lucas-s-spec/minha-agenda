@@ -42,9 +42,25 @@
     .hero h1 { font-size: 16px; margin: 0 0 4px; }
     .hero p { margin: 0; opacity: .92; font-size: 11px; }
     .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-    .status-chip { background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.28); border-radius: 8px; padding: 7px; cursor: pointer; }
+    .status-chip { background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.28); border-radius: 8px; padding: 7px; }
     .status-chip b { display: block; font-size: 10px; opacity: .8; text-transform: uppercase; }
     .status-chip span { display: block; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    
+    .btn-connect {
+      background: rgba(255, 255, 255, 0.22);
+      border: 2px solid #ffffff;
+      border-radius: 8px;
+      padding: 7px;
+      color: white;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      transition: background 0.2s;
+    }
+    .btn-connect:hover {
+      background: rgba(255, 255, 255, 0.35);
+    }
+
     .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(15,23,42,.06); }
     .card-title { display: flex; justify-content: space-between; gap: 8px; align-items: center; color: var(--primary); font-weight: 800; margin-bottom: 9px; font-size: 14px; }
     .small { color: var(--muted); font-size: 11px; }
@@ -54,19 +70,23 @@
     .value { color: #0f172a; font-weight: 800; text-align: right; overflow-wrap: anywhere; }
     .notice { border-radius: 8px; padding: 9px; margin: 8px 0; font-size: 11px; }
     .notice.info { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    
     button, select, input, textarea { font-family: inherit; }
     .btn { width: 100%; min-height: 36px; border: 0; border-radius: 8px; color: white; background: var(--primary); font-weight: 800; font-size: 12px; cursor: pointer; padding: 8px 9px; }
     .btn:hover { filter: brightness(.96); }
     .btn.success { background: var(--success); }
     .btn.outline { color: var(--primary); background: white; border: 1px solid var(--primary); }
+    
     .tabs { display: grid; grid-template-columns: 1fr 1fr; background: #e2e8f0; padding: 3px; border-radius: 8px; margin-bottom: 12px; gap: 4px; }
     .tab-btn { border: 0; background: transparent; padding: 7px; font-weight: 800; font-size: 12px; color: var(--muted); border-radius: 6px; cursor: pointer; }
     .tab-btn.active { background: white; color: var(--primary); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+    
     .field-group { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
     .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
     input, select, textarea { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 8px; font-size: 12px; background: white; outline: none; }
     input:focus, select:focus, textarea:focus { border-color: var(--primary); }
+    
     .event-item { background: var(--soft); border-left: 4px solid var(--primary); border-radius: 8px; padding: 10px; margin-bottom: 8px; }
     .event-header { display: flex; justify-content: space-between; font-weight: 800; margin-bottom: 4px; }
     .event-meta { font-size: 11px; color: var(--muted); line-height: 1.4; }
@@ -85,10 +105,12 @@
     <div class="status-grid">
       <div class="status-chip"><b>SDK</b><span id="sdk-state">Inicializando</span></div>
       <div class="status-chip"><b>Chat</b><span id="chat-state">Aguardando</span></div>
-      <div class="status-chip" onclick="connectGoogleAccount()" title="Clique para conectar a conta Google">
-        <b>Google Agenda</b>
-        <span id="gcal-state">Conectar</span>
-      </div>
+      
+      <button type="button" class="btn-connect" id="btn-gcal-connect" title="Clique para autenticar conta Google">
+        <b style="display: block; font-size: 10px; opacity: .9; text-transform: uppercase;">Google Agenda</b>
+        <span id="gcal-state" style="display: block; font-weight: 800; font-size: 12px; color: #fef08a;">⚡ Conectar</span>
+      </button>
+
       <div class="status-chip"><b>Agendados</b><span id="count-state">0 marcados</span></div>
     </div>
   </section>
@@ -204,43 +226,66 @@
 
   function initGoogleAuth() {
     if (!window.google?.accounts?.oauth2) {
-      setTimeout(initGoogleAuth, 400);
-      return;
+      console.warn('SDK do Google Identity ainda não carregou na memória.');
+      return false;
     }
-    tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: GOOGLE_CLIENT_ID,
-      scope: GOOGLE_SCOPES,
-      callback: (tokenResponse) => {
-        if (tokenResponse && tokenResponse.access_token) {
-          googleAccessToken = tokenResponse.access_token;
-          localStorage.setItem('gcal_token', googleAccessToken);
-          updateGoogleStatus(true);
-          if (state.hasOmni && omni.ui?.toast) {
-            omni.ui.toast('Google Agenda conectado com sucesso!', 'success');
+    try {
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_CLIENT_ID,
+        scope: GOOGLE_SCOPES,
+        callback: (tokenResponse) => {
+          if (tokenResponse?.error) {
+            alert('Erro retornado pelo Google: ' + JSON.stringify(tokenResponse));
+            return;
           }
-          fetchGoogleEvents();
+          if (tokenResponse?.access_token) {
+            googleAccessToken = tokenResponse.access_token;
+            localStorage.setItem('gcal_token', googleAccessToken);
+            updateGoogleStatus(true);
+            if (state.hasOmni && omni.ui?.toast) {
+              omni.ui.toast('Google Agenda conectado com sucesso!', 'success');
+            } else {
+              alert('Google Agenda conectado com sucesso!');
+            }
+            fetchGoogleEvents();
+          }
         }
-      }
-    });
+      });
+      return true;
+    } catch (e) {
+      alert('Erro ao inicializar OAuth: ' + e.message);
+      return false;
+    }
   }
 
   function connectGoogleAccount() {
-    if (!tokenClient) initGoogleAuth();
-    if (tokenClient) {
+    if (!window.google?.accounts?.oauth2) {
+      alert('Atenção: A biblioteca do Google (accounts.google.com/gsi/client) ainda não carregou ou foi bloqueada pela sandbox da plataforma.');
+      return;
+    }
+    if (!tokenClient) {
+      const ok = initGoogleAuth();
+      if (!ok) return;
+    }
+    try {
       tokenClient.requestAccessToken({ prompt: 'consent' });
+    } catch (err) {
+      alert('Falha ao abrir popup: ' + err.message);
     }
   }
 
   function updateGoogleStatus(connected) {
     const el = $('gcal-state');
     if (connected) {
-      el.textContent = 'Conectado';
+      el.textContent = '✓ Conectado';
       el.style.color = '#86efac';
     } else {
-      el.textContent = 'Conectar';
-      el.style.color = 'white';
+      el.textContent = '⚡ Conectar';
+      el.style.color = '#fef08a';
     }
   }
+
+  $('btn-gcal-connect').addEventListener('click', connectGoogleAccount);
 
   async function pushToGoogleCalendar(appointment) {
     if (!googleAccessToken) return false;
@@ -284,7 +329,10 @@
   }
 
   async function fetchGoogleEvents() {
-    if (!googleAccessToken) return;
+    if (!googleAccessToken) {
+      connectGoogleAccount();
+      return;
+    }
 
     const now = new Date();
     now.setHours(0, 0, 0, 0);
