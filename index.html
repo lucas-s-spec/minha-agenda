@@ -231,14 +231,62 @@
   });
 
   function connectGoogleAccount() {
-    const match = window.location.href.match(/minha-agenda\/([a-f0-9]+)\//);
-    const commitHash = match ? match[1] : 'f281a6c';
-    const oauthUrl = `https://raw.githack.com/lucas-s-spec/minha-agenda/${commitHash}/oauth.html`;
-
-    const popup = window.open(oauthUrl, 'google_oauth_popup', 'width=460,height=560');
+    const popup = window.open('about:blank', 'google_oauth_popup', 'width=460,height=560');
     if (!popup) {
-      alert('O navegador bloqueou a abertura do popup. Permita popups para este site.');
+      alert('Permita a abertura de popups no navegador para autenticar.');
+      return;
     }
+
+    const popupHtml = `
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+      <head>
+        <meta charset="UTF-8">
+        <title>Google Calendar</title>
+        <script src="https://accounts.google.com/gsi/client"><\/script>
+        <style>
+          body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f8fafc; }
+          .card { background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,.1); text-align: center; width: 320px; }
+          button { width: 100%; padding: 12px; border: 0; border-radius: 8px; background: #1458ea; color: white; font-weight: bold; cursor: pointer; margin-top: 14px; }
+          #st { font-size: 12px; color: #64748b; margin-top: 10px; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <h3 style="margin:0 0 8px 0">Conectar Google Agenda</h3>
+          <p style="font-size:12px;color:#475569;margin:0">Autorize o acesso aos seus eventos.</p>
+          <button id="bt">Entrar com o Google</button>
+          <div id="st">Inicializando...</div>
+        </div>
+        <script>
+          let client;
+          function setup() {
+            if (!window.google?.accounts?.oauth2) { setTimeout(setup, 300); return; }
+            client = google.accounts.oauth2.initTokenClient({
+              client_id: '92440529523-fgo3hm40m24v51mj2u9a1mfs32hki5ca.apps.googleusercontent.com',
+              scope: 'https://www.googleapis.com/auth/calendar.events',
+              callback: (res) => {
+                if (res?.access_token && window.opener) {
+                  window.opener.postMessage({ type: 'GOOGLE_AUTH_SUCCESS', token: res.access_token }, '*');
+                  document.getElementById('st').innerText = 'Sucesso! Fechando...';
+                  setTimeout(() => window.close(), 600);
+                }
+              }
+            });
+            document.getElementById('st').innerText = 'Pronto.';
+          }
+          document.getElementById('bt').onclick = () => {
+            if (client) client.requestAccessToken({ prompt: 'consent' });
+          };
+          setup();
+        <\/script>
+      </body>
+      </html>
+    `;
+
+    popup.document.open();
+    popup.document.write(popupHtml);
+    popup.document.close();
   }
 
   function updateGoogleStatus(connected) {
