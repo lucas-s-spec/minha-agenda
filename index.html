@@ -102,7 +102,7 @@
       <div class="status-chip"><b>SDK</b><span id="sdk-state">Inicializando</span></div>
       <div class="status-chip"><b>Chat</b><span id="chat-state">Aguardando</span></div>
       
-      <button type="button" class="btn-connect" id="btn-gcal-connect" title="Clique para conectar ou inserir Token do Google">
+      <button type="button" class="btn-connect" id="btn-gcal-connect" title="Clique para conectar a conta Google">
         <b style="display: block; font-size: 10px; opacity: .9; text-transform: uppercase;">Google Agenda</b>
         <span id="gcal-state" style="display: block; font-weight: 800; font-size: 12px; color: #fef08a;">⚡ Conectar</span>
       </button>
@@ -186,9 +186,6 @@
 </div>
 
 <script>
-  const GOOGLE_CLIENT_ID = '92440529523-fgo3hm40m24v51mj2u9a1mfs32hki5ca.apps.googleusercontent.com';
-  const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/calendar.events';
-
   let googleAccessToken = localStorage.getItem('gcal_token') || null;
 
   const state = {
@@ -219,51 +216,26 @@
     setTimeout(resizeHost, 800);
   }
 
-  // Abre o popup direto do Google OAuth sem bibliotecas externas
-  function connectGoogleAccount() {
-    const redirectUri = window.location.origin;
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(GOOGLE_CLIENT_ID)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(GOOGLE_SCOPES)}&prompt=consent`;
-
-    const popup = window.open(authUrl, 'google_oauth_popup', 'width=550,height=650');
-
-    if (!popup) {
-      const manualToken = prompt('O navegador bloqueou o popup. Caso já tenha um token, cole-o aqui:');
-      if (manualToken) {
-        googleAccessToken = manualToken.trim();
-        localStorage.setItem('gcal_token', googleAccessToken);
-        updateGoogleStatus(true);
-        fetchGoogleEvents();
+  window.addEventListener('message', (event) => {
+    if (event.data?.type === 'GOOGLE_AUTH_SUCCESS' && event.data?.token) {
+      googleAccessToken = event.data.token;
+      localStorage.setItem('gcal_token', googleAccessToken);
+      updateGoogleStatus(true);
+      if (state.hasOmni && omni.ui?.toast) {
+        omni.ui.toast('Google Agenda conectado com sucesso!', 'success');
+      } else {
+        alert('Google Agenda conectado com sucesso!');
       }
-      return;
+      fetchGoogleEvents();
     }
+  });
 
-    const timer = setInterval(() => {
-      try {
-        if (!popup || popup.closed) {
-          clearInterval(timer);
-          return;
-        }
-        const loc = popup.location.href;
-        if (loc && loc.includes('access_token=')) {
-          const match = loc.match(/access_token=([^&]+)/);
-          if (match && match[1]) {
-            googleAccessToken = decodeURIComponent(match[1]);
-            localStorage.setItem('gcal_token', googleAccessToken);
-            updateGoogleStatus(true);
-            popup.close();
-            clearInterval(timer);
-            if (state.hasOmni && omni.ui?.toast) {
-              omni.ui.toast('Conectado ao Google Calendar!', 'success');
-            } else {
-              alert('Conectado ao Google Calendar com sucesso!');
-            }
-            fetchGoogleEvents();
-          }
-        }
-      } catch (e) {
-        // Ignora erros de CORS enquanto o popup ainda estiver navegando no domínio do Google
-      }
-    }, 500);
+  function connectGoogleAccount() {
+    const oauthUrl = window.location.href.replace(/index\.html.*/, 'oauth.html');
+    const popup = window.open(oauthUrl, 'google_oauth_popup', 'width=460,height=560');
+    if (!popup) {
+      alert('O navegador bloqueou a abertura do popup. Permita popups para este site.');
+    }
   }
 
   function updateGoogleStatus(connected) {
@@ -279,7 +251,6 @@
 
   $('btn-gcal-connect').onclick = connectGoogleAccount;
 
-  // ENDPOINT 1: POST para cadastrar evento no Google Calendar
   async function pushToGoogleCalendar(appointment) {
     if (!googleAccessToken) {
       connectGoogleAccount();
@@ -324,7 +295,6 @@
     }
   }
 
-  // ENDPOINT 2: GET para listar eventos que já existem no Google Calendar
   async function fetchGoogleEvents() {
     if (!googleAccessToken) {
       connectGoogleAccount();
@@ -352,7 +322,6 @@
         localStorage.removeItem('gcal_token');
         googleAccessToken = null;
         updateGoogleStatus(false);
-        connectGoogleAccount();
         return;
       }
 
