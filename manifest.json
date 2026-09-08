@@ -9,7 +9,7 @@
       "id": "agenda-painel",
       "type": "chatPanel",
       "title": "Agenda",
-      "entrypoint": "index.html"
+      "url": "index.html"
     }
   ]
 }
