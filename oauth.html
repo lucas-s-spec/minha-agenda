@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Autenticação Google Calendar</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background: #f8fafc;
+      color: #0f172a;
+      text-align: center;
+      padding: 20px;
+    }
+    .box {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      max-width: 380px;
+      width: 100%;
+    }
+    button {
+      background: #1458ea;
+      color: white;
+      border: 0;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 15px;
+      width: 100%;
+    }
+    button:hover { filter: brightness(0.95); }
+    #msg { font-size: 12px; margin-top: 12px; color: #64748b; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h3 style="margin-top:0">Conectar Google Agenda</h3>
+    <p style="font-size:13px; color:#475569">Clique abaixo para autorizar o acesso aos seus eventos.</p>
+    <button id="btn-login" onclick="startLogin()">Fazer Login com Google</button>
+    <div id="msg">Aguardando início...</div>
+  </div>
+
+  <script>
+    const CLIENT_ID = '92440529523-fgo3hm40m24v51mj2u9a1mfs32hki5ca.apps.googleusercontent.com';
+    const SCOPES = 'https://www.googleapis.com/auth/calendar.events';
+    let tokenClient;
+
+    function initClient() {
+      if (!window.google?.accounts?.oauth2) {
+        setTimeout(initClient, 300);
+        return;
+      }
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: (response) => {
+          if (response?.error) {
+            document.getElementById('msg').innerText = 'Erro: ' + response.error;
+            return;
+          }
+          if (response?.access_token) {
+            document.getElementById('msg').innerText = 'Sucesso! Conectando...';
+            // Devolve o token para a aba que abriu o popup
+            if (window.opener) {
+              window.opener.postMessage({ type: 'GOOGLE_AUTH_SUCCESS', token: response.access_token }, '*');
+            }
+            setTimeout(() => window.close(), 1000);
+          }
+        }
+      });
+      document.getElementById('msg').innerText = 'Pronto para autenticar.';
+    }
+
+    function startLogin() {
+      if (!tokenClient) initClient();
+      tokenClient.requestAccessToken({ prompt: 'consent' });
+    }
+
+    window.onload = initClient;
+  </script>
+</body>
+</html>
