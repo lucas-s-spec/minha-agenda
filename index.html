@@ -235,18 +235,18 @@
     const redirectUri = 'https://lucas-s-spec.github.io/minha-agenda/oauth.html';
     const scope = 'https://www.googleapis.com/auth/calendar.events';
 
-    const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({
+    const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: redirectUri,
       response_type: 'token',
       scope: scope,
-      prompt: 'consent'
-    }).toString();
+      prompt: 'consent',
+      login_hint: 'jwlucasduraes@gmail.com'
+    });
 
-    const popup = window.open(authUrl, 'google_oauth_popup', 'width=500,height=600');
-    if (!popup) {
-      alert('Permita a abertura de popups no navegador para autenticar.');
-    }
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+
+    window.open(authUrl, '_blank');
   }
 
   function updateGoogleStatus(connected) {
