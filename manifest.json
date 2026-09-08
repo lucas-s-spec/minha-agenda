@@ -6,7 +6,8 @@
   "description": "Agenda integrada para marcação de reuniões e consultas",
   "contributions": [
     {
-      "target": "sidebar",
+      "id": "agenda-painel",
+      "type": "chatPanel",
       "title": "Agenda",
       "entrypoint": "index.html"
     }
