@@ -4,8 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Minha Agenda Pessoal</title>
-  <!-- Script oficial Google Identity Services -->
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; min-height: 100%; }
@@ -57,9 +55,7 @@
       font-family: inherit;
       transition: background 0.2s;
     }
-    .btn-connect:hover {
-      background: rgba(255, 255, 255, 0.35);
-    }
+    .btn-connect:hover { background: rgba(255, 255, 255, 0.35); }
 
     .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(15,23,42,.06); }
     .card-title { display: flex; justify-content: space-between; gap: 8px; align-items: center; color: var(--primary); font-weight: 800; margin-bottom: 9px; font-size: 14px; }
@@ -101,12 +97,12 @@
 <div class="app" id="app">
   <section class="hero">
     <h1>Minha Agenda Pessoal</h1>
-    <p>Agendamento integrado ao AtenderBem e Google Calendar API.</p>
+    <p>Agendamento direto via Google Calendar API REST.</p>
     <div class="status-grid">
       <div class="status-chip"><b>SDK</b><span id="sdk-state">Inicializando</span></div>
       <div class="status-chip"><b>Chat</b><span id="chat-state">Aguardando</span></div>
       
-      <button type="button" class="btn-connect" id="btn-gcal-connect" title="Clique para autenticar conta Google">
+      <button type="button" class="btn-connect" id="btn-gcal-connect" title="Clique para conectar ou inserir Token do Google">
         <b style="display: block; font-size: 10px; opacity: .9; text-transform: uppercase;">Google Agenda</b>
         <span id="gcal-state" style="display: block; font-weight: 800; font-size: 12px; color: #fef08a;">⚡ Conectar</span>
       </button>
@@ -171,7 +167,7 @@
           <textarea id="eventNotes" rows="2" placeholder="Link da videochamada ou pauta"></textarea>
         </div>
 
-        <button type="submit" class="btn success" style="margin-top:6px">Salvar e Sincronizar no Google</button>
+        <button type="submit" class="btn success" style="margin-top:6px">Salvar e Enviar para o Google</button>
       </form>
     </section>
   </div>
@@ -193,7 +189,6 @@
   const GOOGLE_CLIENT_ID = '92440529523-fgo3hm40m24v51mj2u9a1mfs32hki5ca.apps.googleusercontent.com';
   const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/calendar.events';
 
-  let tokenClient = null;
   let googleAccessToken = localStorage.getItem('gcal_token') || null;
 
   const state = {
@@ -224,54 +219,51 @@
     setTimeout(resizeHost, 800);
   }
 
-  function initGoogleAuth() {
-    if (!window.google?.accounts?.oauth2) {
-      console.warn('SDK do Google Identity ainda não carregou na memória.');
-      return false;
+  // Abre o popup direto do Google OAuth sem bibliotecas externas
+  function connectGoogleAccount() {
+    const redirectUri = window.location.origin;
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(GOOGLE_CLIENT_ID)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(GOOGLE_SCOPES)}&prompt=consent`;
+
+    const popup = window.open(authUrl, 'google_oauth_popup', 'width=550,height=650');
+
+    if (!popup) {
+      const manualToken = prompt('O navegador bloqueou o popup. Caso já tenha um token, cole-o aqui:');
+      if (manualToken) {
+        googleAccessToken = manualToken.trim();
+        localStorage.setItem('gcal_token', googleAccessToken);
+        updateGoogleStatus(true);
+        fetchGoogleEvents();
+      }
+      return;
     }
-    try {
-      tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: GOOGLE_CLIENT_ID,
-        scope: GOOGLE_SCOPES,
-        callback: (tokenResponse) => {
-          if (tokenResponse?.error) {
-            alert('Erro retornado pelo Google: ' + JSON.stringify(tokenResponse));
-            return;
-          }
-          if (tokenResponse?.access_token) {
-            googleAccessToken = tokenResponse.access_token;
+
+    const timer = setInterval(() => {
+      try {
+        if (!popup || popup.closed) {
+          clearInterval(timer);
+          return;
+        }
+        const loc = popup.location.href;
+        if (loc && loc.includes('access_token=')) {
+          const match = loc.match(/access_token=([^&]+)/);
+          if (match && match[1]) {
+            googleAccessToken = decodeURIComponent(match[1]);
             localStorage.setItem('gcal_token', googleAccessToken);
             updateGoogleStatus(true);
+            popup.close();
+            clearInterval(timer);
             if (state.hasOmni && omni.ui?.toast) {
-              omni.ui.toast('Google Agenda conectado com sucesso!', 'success');
+              omni.ui.toast('Conectado ao Google Calendar!', 'success');
             } else {
-              alert('Google Agenda conectado com sucesso!');
+              alert('Conectado ao Google Calendar com sucesso!');
             }
             fetchGoogleEvents();
           }
         }
-      });
-      return true;
-    } catch (e) {
-      alert('Erro ao inicializar OAuth: ' + e.message);
-      return false;
-    }
-  }
-
-  function connectGoogleAccount() {
-    if (!window.google?.accounts?.oauth2) {
-      alert('Atenção: A biblioteca do Google (accounts.google.com/gsi/client) ainda não carregou ou foi bloqueada pela sandbox da plataforma.');
-      return;
-    }
-    if (!tokenClient) {
-      const ok = initGoogleAuth();
-      if (!ok) return;
-    }
-    try {
-      tokenClient.requestAccessToken({ prompt: 'consent' });
-    } catch (err) {
-      alert('Falha ao abrir popup: ' + err.message);
-    }
+      } catch (e) {
+        // Ignora erros de CORS enquanto o popup ainda estiver navegando no domínio do Google
+      }
+    }, 500);
   }
 
   function updateGoogleStatus(connected) {
@@ -285,10 +277,14 @@
     }
   }
 
-  $('btn-gcal-connect').addEventListener('click', connectGoogleAccount);
+  $('btn-gcal-connect').onclick = connectGoogleAccount;
 
+  // ENDPOINT 1: POST para cadastrar evento no Google Calendar
   async function pushToGoogleCalendar(appointment) {
-    if (!googleAccessToken) return false;
+    if (!googleAccessToken) {
+      connectGoogleAccount();
+      return false;
+    }
 
     const startIso = `${appointment.date}T${appointment.time}:00`;
     const startDate = new Date(startIso);
@@ -297,7 +293,7 @@
 
     const payload = {
       summary: appointment.title,
-      description: `${appointment.notes || ''}\n\nCliente: ${appointment.clientName} (${appointment.clientPhone})`,
+      description: `${appointment.notes || ''}\n\nContato: ${appointment.clientName} (${appointment.clientPhone})`,
       start: { dateTime: startDate.toISOString(), timeZone: tz },
       end: { dateTime: endDate.toISOString(), timeZone: tz },
       attendees: appointment.email ? [{ email: appointment.email }] : []
@@ -314,8 +310,8 @@
       });
 
       if (res.status === 401) {
-        googleAccessToken = null;
         localStorage.removeItem('gcal_token');
+        googleAccessToken = null;
         updateGoogleStatus(false);
         connectGoogleAccount();
         return false;
@@ -328,6 +324,7 @@
     }
   }
 
+  // ENDPOINT 2: GET para listar eventos que já existem no Google Calendar
   async function fetchGoogleEvents() {
     if (!googleAccessToken) {
       connectGoogleAccount();
@@ -352,9 +349,10 @@
       });
 
       if (res.status === 401) {
-        googleAccessToken = null;
         localStorage.removeItem('gcal_token');
+        googleAccessToken = null;
         updateGoogleStatus(false);
+        connectGoogleAccount();
         return;
       }
 
@@ -366,7 +364,7 @@
           const dur = Math.round((end - start) / 60000) || 30;
           return {
             id: item.id,
-            title: item.summary || 'Sem título',
+            title: item.summary || 'Compromisso',
             date: start.toISOString().split('T')[0],
             time: start.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
             duration: dur,
@@ -488,11 +486,11 @@
     if (googleAccessToken) {
       const ok = await pushToGoogleCalendar(newEv);
       if (ok && state.hasOmni && omni.ui?.toast) {
-        await omni.ui.toast('Agendado e sincronizado no Google Calendar!', 'success');
+        await omni.ui.toast('Evento sincronizado no Google Calendar!', 'success');
       }
     } else {
       if (state.hasOmni && omni.ui?.toast) {
-        await omni.ui.toast('Salvo localmente. Conecte ao Google no topo.', 'warn');
+        await omni.ui.toast('Salvo localmente. Conecte ao Google para sincronizar.', 'warn');
       }
     }
 
@@ -531,7 +529,6 @@
   if (googleAccessToken) updateGoogleStatus(true);
 
   async function boot() {
-    initGoogleAuth();
     if (!state.hasOmni) {
       $('sdk-state').textContent = 'Modo isolado';
       await refreshChat();
