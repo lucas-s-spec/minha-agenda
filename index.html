@@ -231,7 +231,7 @@
   });
 
   function connectGoogleAccount() {
-    const oauthUrl = window.location.href.replace(/index\.html.*/, 'oauth.html');
+    const oauthUrl = 'https://raw.githack.com/lucas-s-spec/minha-agenda/main/oauth.html';
     const popup = window.open(oauthUrl, 'google_oauth_popup', 'width=460,height=560');
     if (!popup) {
       alert('O navegador bloqueou a abertura do popup. Permita popups para este site.');
