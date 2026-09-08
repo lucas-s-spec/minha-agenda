@@ -3,527 +3,376 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Minha Agenda</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,500,0,0" />
-
+  <title>Minha Agenda Pessoal</title>
   <style>
-    :root {
-      --primary: #1e40af;
-      --primary-light: #3b82f6;
-      --bg: #f8fafc;
-      --card-bg: #ffffff;
-      --text-main: #1e293b;
-      --text-muted: #64748b;
-      --border: #e2e8f0;
-      --radius: 10px;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Plus Jakarta Sans', sans-serif;
-    }
-
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
     body {
-      width: 100%;
-      background-color: var(--bg);
-      color: var(--text-main);
-      padding: 10px;
-    }
-
-    .wrapper {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      width: 100%;
-    }
-
-    /* Hero Banner idêntico ao FastCorte */
-    .hero-card {
-      background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-      color: #ffffff;
-      border-radius: var(--radius);
-      padding: 14px;
-      box-shadow: 0 2px 8px rgba(30, 64, 175, 0.15);
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .hero-card h2 {
-      font-size: 14px;
-      font-weight: 700;
-    }
-
-    .hero-card p {
-      font-size: 11px;
-      opacity: 0.9;
-      line-height: 1.3;
-    }
-
-    .hero-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-    }
-
-    .hero-badge {
-      background: rgba(255, 255, 255, 0.18);
-      backdrop-filter: blur(4px);
-      padding: 6px 8px;
-      border-radius: 6px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .hero-badge span:first-child {
-      font-size: 9px;
-      text-transform: uppercase;
-      opacity: 0.8;
-      font-weight: 600;
-    }
-
-    .hero-badge span:last-child {
-      font-size: 11px;
-      font-weight: 700;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    /* Abas */
-    .tabs {
-      display: flex;
-      background: #e2e8f0;
-      padding: 2px;
-      border-radius: 8px;
-    }
-
-    .tab-btn {
-      flex: 1;
-      border: none;
-      background: transparent;
-      padding: 6px;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text-muted);
-      border-radius: 6px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      transition: all 0.2s;
-    }
-
-    .tab-btn.active {
-      background: #ffffff;
-      color: var(--primary);
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
-    }
-
-    /* Cards */
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
+      background: var(--ext-color-bg, #f8fafc);
+      color: var(--ext-color-text, #172033);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      font-size: 13px;
+      line-height: 1.45;
       padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+      overflow-x: hidden;
     }
-
-    .card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 6px;
+    :root {
+      --primary: var(--ext-color-primary, #1458ea);
+      --primary-light: var(--ext-color-primary-light, #e8f0ff);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --muted: #64748b;
+      --border: #dbe3ef;
+      --card: #ffffff;
+      --soft: #f1f5f9;
+      --dark: #0f172a;
     }
-
-    .card-title {
-      font-size: 12px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      color: var(--text-main);
-    }
-
-    .field-group {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      flex: 1;
-    }
-
-    .field-row {
-      display: flex;
-      gap: 6px;
-    }
-
-    label {
-      font-size: 10px;
-      font-weight: 600;
-      color: var(--text-muted);
-    }
-
-    input, select, textarea {
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 6px 8px;
-      font-size: 12px;
-      color: var(--text-main);
-      outline: none;
-      width: 100%;
-      background: #fff;
-    }
-
-    input:focus, select:focus, textarea:focus {
-      border-color: var(--primary-light);
-    }
-
-    .btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 8px;
-      border-radius: 6px;
-      font-size: 12px;
-      font-weight: 600;
-      border: none;
-      cursor: pointer;
-      width: 100%;
-    }
-
-    .btn-primary {
-      background: var(--primary);
+    .app { width: 100%; max-width: 100%; }
+    .hero {
+      background: linear-gradient(135deg, var(--primary), #29bdff);
       color: white;
+      padding: 14px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 8px 18px rgba(20, 88, 234, .18);
     }
-
-    .btn-outline {
-      background: #f8fafc;
-      border: 1px solid var(--border);
-      color: var(--text-main);
-      padding: 3px 6px;
-      font-size: 10px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    .event-card {
-      background: #ffffff;
-      border: 1px solid var(--border);
-      border-left: 3px solid var(--primary);
-      border-radius: 6px;
-      padding: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      margin-bottom: 6px;
-    }
-
-    .event-card-header {
-      display: flex;
-      justify-content: space-between;
-      font-weight: 700;
-      font-size: 11px;
-    }
-
-    .event-meta {
-      font-size: 10px;
-      color: var(--text-muted);
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .event-actions {
-      display: flex;
-      gap: 4px;
-      margin-top: 4px;
-      border-top: 1px solid var(--border);
-      padding-top: 4px;
-    }
-
-    .action-btn {
-      flex: 1;
-      padding: 4px;
-      font-size: 10px;
-      background: #f8fafc;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 3px;
-    }
+    .hero h1 { font-size: 16px; margin: 0 0 4px; }
+    .hero p { margin: 0; opacity: .92; font-size: 11px; }
+    .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    .status-chip { background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.28); border-radius: 8px; padding: 7px; }
+    .status-chip b { display: block; font-size: 10px; opacity: .8; text-transform: uppercase; }
+    .status-chip span { display: block; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(15,23,42,.06); }
+    .card-title { display: flex; justify-content: space-between; gap: 8px; align-items: center; color: var(--primary); font-weight: 800; margin-bottom: 9px; font-size: 14px; }
+    .small { color: var(--muted); font-size: 11px; }
+    .row { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px dashed var(--border); }
+    .row:last-child { border-bottom: 0; }
+    .label { color: var(--muted); font-weight: 600; }
+    .value { color: #0f172a; font-weight: 800; text-align: right; overflow-wrap: anywhere; }
+    .notice { border-radius: 8px; padding: 9px; margin: 8px 0; font-size: 11px; }
+    .notice.info { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .notice.warn { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+    .notice.ok { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+    button, select, input, textarea { font-family: inherit; }
+    .btn { width: 100%; min-height: 36px; border: 0; border-radius: 8px; color: white; background: var(--primary); font-weight: 800; font-size: 12px; cursor: pointer; padding: 8px 9px; }
+    .btn:hover { filter: brightness(.96); }
+    .btn.secondary { background: #475569; }
+    .btn.success { background: var(--success); }
+    .btn.warn { background: var(--warning); }
+    .btn.danger { background: var(--danger); }
+    .btn.outline { color: var(--primary); background: white; border: 1px solid var(--primary); }
+    .tabs { display: grid; grid-template-columns: 1fr 1fr; background: #e2e8f0; padding: 3px; border-radius: 8px; margin-bottom: 12px; gap: 4px; }
+    .tab-btn { border: 0; background: transparent; padding: 7px; font-weight: 800; font-size: 12px; color: var(--muted); border-radius: 6px; cursor: pointer; }
+    .tab-btn.active { background: white; color: var(--primary); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+    .field-group { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+    input, select, textarea { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 8px; font-size: 12px; background: white; outline: none; }
+    input:focus, select:focus, textarea:focus { border-color: var(--primary); }
+    .event-item { background: var(--soft); border-left: 4px solid var(--primary); border-radius: 8px; padding: 10px; margin-bottom: 8px; }
+    .event-header { display: flex; justify-content: space-between; font-weight: 800; margin-bottom: 4px; }
+    .event-meta { font-size: 11px; color: var(--muted); line-height: 1.4; }
+    .event-btns { display: grid; grid-template-columns: 1fr 1fr auto; gap: 6px; margin-top: 8px; }
+    .mini-btn { border: 1px solid var(--border); background: white; border-radius: 6px; font-size: 11px; font-weight: 700; padding: 4px; cursor: pointer; }
+    .mini-btn.del { color: var(--danger); border-color: #fecaca; }
+    .footer-space { height: 40px; }
   </style>
 </head>
 <body>
 
-  <div class="wrapper" id="root">
-    <!-- Hero Card -->
-    <div class="hero-card">
-      <h2>Minha Agenda</h2>
-      <p>Gerenciador de agendamentos e reuniões.</p>
-      <div class="hero-grid">
-        <div class="hero-badge">
-          <span>SDK</span>
-          <span id="sdkLabel">Conectado</span>
-        </div>
-        <div class="hero-badge">
-          <span>Cliente</span>
-          <span id="chatStatus">Aguardando...</span>
-        </div>
+<div class="app" id="app">
+  <section class="hero">
+    <h1>Minha Agenda Pessoal</h1>
+    <p>Agendamento de reuniões e consultas sincronizado com o Google Calendar.</p>
+    <div class="status-grid">
+      <div class="status-chip"><b>SDK</b><span id="sdk-state">Inicializando</span></div>
+      <div class="status-chip"><b>Chat</b><span id="chat-state">Aguardando</span></div>
+      <div class="status-chip"><b>Agendados</b><span id="count-state">0 marcados</span></div>
+      <div class="status-chip"><b>Google Meet</b><span>Disponível</span></div>
+    </div>
+  </section>
+
+  <div class="tabs">
+    <button type="button" class="tab-btn active" id="tabNewBtn" onclick="switchTab('new')">Novo Agendamento</button>
+    <button type="button" class="tab-btn" id="tabListBtn" onclick="switchTab('list')">Compromissos (<span id="tabCount">0</span>)</button>
+  </div>
+
+  <div id="tabNewContent">
+    <section class="card">
+      <div class="card-title">
+        <span>👤 Cliente do Chat</span>
+        <button type="button" class="btn outline" style="width:auto;min-height:26px;padding:2px 8px;font-size:11px" onclick="fillCurrentClient()">Puxar Dados</button>
       </div>
-    </div>
+      <div class="row"><span class="label">Nome</span><span class="value" id="cust-name">-</span></div>
+      <div class="row"><span class="label">Telefone</span><span class="value" id="cust-phone">-</span></div>
+      <div class="row"><span class="label">Chat ID</span><span class="value" id="chat-id">-</span></div>
+    </section>
 
-    <!-- Navegação -->
-    <div class="tabs">
-      <button class="tab-btn active" id="tabNewBtn" onclick="switchTab('new')">
-        <span class="material-symbols-outlined" style="font-size:15px;">add</span> Agendar
-      </button>
-      <button class="tab-btn" id="tabListBtn" onclick="switchTab('list')">
-        <span class="material-symbols-outlined" style="font-size:15px;">list_alt</span> Marcados (<span id="eventCount">0</span>)
-      </button>
-    </div>
-
-    <!-- Tab Novo -->
-    <div id="tabNewContent">
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">
-            <span class="material-symbols-outlined" style="font-size:16px;">person</span>
-            Contato
-          </span>
-          <button type="button" class="btn-outline" onclick="useClientData()">Puxar do Chat</button>
+    <section class="card">
+      <div class="card-title"><span>📅 Detalhes do Horário</span></div>
+      <form id="scheduleForm">
+        <div class="field-group">
+          <label>Título da Reunião</label>
+          <input type="text" id="eventTitle" placeholder="Ex: Demonstração / Consulta" required>
         </div>
 
         <div class="field-row">
           <div class="field-group">
-            <label>Nome</label>
-            <input type="text" id="clientName" placeholder="Nome do cliente" />
+            <label>Data</label>
+            <input type="date" id="eventDate" required>
           </div>
           <div class="field-group">
-            <label>Telefone</label>
-            <input type="text" id="clientPhone" placeholder="DDD + Número" />
+            <label>Horário</label>
+            <input type="time" id="eventTime" required>
           </div>
         </div>
-      </div>
 
-      <div class="card" style="margin-top: 8px;">
-        <div class="card-header">
-          <span class="card-title">
-            <span class="material-symbols-outlined" style="font-size:16px;">event</span>
-            Horário
-          </span>
+        <div class="field-row">
+          <div class="field-group">
+            <label>Duração</label>
+            <select id="eventDuration">
+              <option value="15">15 min</option>
+              <option value="30" selected>30 min</option>
+              <option value="45">45 min</option>
+              <option value="60">1 hora</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label>E-mail Convidado</label>
+            <input type="email" id="eventEmail" placeholder="cliente@email.com">
+          </div>
         </div>
 
-        <form id="appointmentForm">
-          <div class="field-group" style="margin-bottom: 6px;">
-            <label>Título</label>
-            <input type="text" id="title" placeholder="Ex: Demonstração / Reunião" required />
-          </div>
+        <div class="field-group">
+          <label>Pauta / Observações</label>
+          <textarea id="eventNotes" rows="2" placeholder="Link da videochamada ou pauta"></textarea>
+        </div>
 
-          <div class="field-row" style="margin-bottom: 6px;">
-            <div class="field-group">
-              <label>Data</label>
-              <input type="date" id="date" required />
-            </div>
-            <div class="field-group">
-              <label>Hora</label>
-              <input type="time" id="time" required />
-            </div>
-            <div class="field-group">
-              <label>Tempo</label>
-              <select id="duration">
-                <option value="30">30m</option>
-                <option value="45">45m</option>
-                <option value="60">1h</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="field-group" style="margin-bottom: 10px;">
-            <label>Observações / Meet</label>
-            <textarea id="notes" rows="2" placeholder="Link da sala ou detalhes"></textarea>
-          </div>
-
-          <button type="submit" class="btn btn-primary">
-            <span class="material-symbols-outlined" style="font-size:16px;">save</span>
-            Salvar e Confirmar
-          </button>
-        </form>
-      </div>
-    </div>
-
-    <!-- Tab Lista -->
-    <div id="tabListContent" style="display: none;">
-      <div id="agendaList"></div>
-    </div>
+        <button type="submit" class="btn success" style="margin-top:6px">Salvar Compromisso</button>
+      </form>
+    </section>
   </div>
 
-  <script>
-    let activeClient = { name: '', phone: '' };
-    let appointments = JSON.parse(localStorage.getItem("agenda_events") || "[]");
+  <div id="tabListContent" style="display:none">
+    <section class="card">
+      <div class="card-title"><span>📋 Lista de Compromissos</span></div>
+      <div id="eventsList"></div>
+    </section>
+  </div>
 
-    // Forçar o scroll do iframe para o topo sempre ao carregar
-    window.scrollTo(0, 0);
+  <div class="footer-space"></div>
+</div>
 
-    // Comunicação com o AtenderBem
-    function notifyPlatform() {
-      const h = document.body.scrollHeight || document.documentElement.scrollHeight;
-      window.parent.postMessage({ type: "RESIZE", height: h }, "*");
-      window.parent.postMessage({ type: "SET_HEIGHT", height: h }, "*");
-      window.parent.postMessage({ type: "size", height: h }, "*");
-    }
+<script>
+  const state = {
+    hasOmni: typeof window.omni !== 'undefined',
+    ready: false,
+    chat: null,
+    appointments: JSON.parse(localStorage.getItem("agenda_events") || "[]")
+  };
 
-    window.addEventListener("message", (event) => {
-      const { type, data } = event.data || {};
-      if (type === "CHAT_SELECTED" || type === "CONTACT_LOADED" || type === "ON_CHAT_OPEN") {
-        activeClient.name = data?.name || data?.contact?.name || "";
-        activeClient.phone = data?.phone || data?.contact?.phone || "";
+  const $ = (id) => document.getElementById(id);
 
-        if (activeClient.name) {
-          document.getElementById("chatStatus").innerText = activeClient.name.split(" ")[0];
-          useClientData();
-        }
-      }
-      notifyPlatform();
+  // Redimensionador idêntico ao da FastCorte para expandir o iframe pai
+  function resizeHost() {
+    if (!state.hasOmni || !omni.ui || !omni.ui.resize) return;
+    requestAnimationFrame(() => {
+      const height = Math.max(
+        document.body.scrollHeight,
+        document.documentElement.scrollHeight,
+        $('app')?.scrollHeight || 0,
+        760
+      );
+      omni.ui.resize(height + 24).catch(() => {});
     });
+  }
 
-    window.parent.postMessage({ type: "EXTENSION_READY" }, "*");
-    window.parent.postMessage({ type: "ready" }, "*");
+  function scheduleResize() {
+    resizeHost();
+    setTimeout(resizeHost, 200);
+    setTimeout(resizeHost, 800);
+  }
 
-    function useClientData() {
-      if (activeClient.name) document.getElementById("clientName").value = activeClient.name;
-      if (activeClient.phone) document.getElementById("clientPhone").value = activeClient.phone;
-      if (!document.getElementById("title").value && activeClient.name) {
-        document.getElementById("title").value = `Reunião - ${activeClient.name}`;
-      }
+  function renderCustomer() {
+    const chat = state.chat;
+    $('chat-state').textContent = chat?.id ? `#${chat.id}` : 'Sem chat';
+    $('cust-name').textContent = chat?.contact?.name || chat?.clientName || chat?.name || 'Não identificado';
+    $('cust-phone').textContent = chat?.contact?.phone || chat?.phone || chat?.clientNumber || '-';
+    $('chat-id').textContent = chat?.id || '-';
+  }
+
+  function fillCurrentClient() {
+    const name = $('cust-name').textContent;
+    if (name && name !== 'Não identificado' && name !== '-') {
+      $('eventTitle').value = `Reunião - ${name}`;
+    }
+  }
+
+  async function refreshChat() {
+    if (!state.hasOmni) {
+      state.chat = { id: 101, contact: { name: 'Lucas Teste', phone: '(38) 99999-9999' } };
+      renderCustomer();
+      return;
+    }
+    try {
+      const chat = await omni.chats.getSelected();
+      state.chat = chat || null;
+      renderCustomer();
+      fillCurrentClient();
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  function switchTab(tab) {
+    if (tab === 'new') {
+      $('tabNewBtn').classList.add('active');
+      $('tabListBtn').classList.remove('active');
+      $('tabNewContent').style.display = 'block';
+      $('tabListContent').style.display = 'none';
+    } else {
+      $('tabNewBtn').classList.remove('active');
+      $('tabListBtn').classList.add('active');
+      $('tabNewContent').style.display = 'none';
+      $('tabListContent').style.display = 'block';
+      renderAppointments();
+    }
+    scheduleResize();
+  }
+
+  function updateCounts() {
+    const count = state.appointments.length;
+    $('count-state').textContent = `${count} marcado(s)`;
+    $('tabCount').textContent = count;
+  }
+
+  function renderAppointments() {
+    const container = $('eventsList');
+    if (!state.appointments.length) {
+      container.innerHTML = '<div class="notice info">Nenhum compromisso marcado até o momento.</div>';
+      return;
     }
 
-    const initDate = () => {
-      const d = new Date();
-      d.setDate(d.getDate() + 1);
-      document.getElementById("date").value = d.toISOString().split('T')[0];
-      document.getElementById("time").value = "14:00";
-    };
-    initDate();
-
-    function switchTab(tab) {
-      if (tab === 'new') {
-        document.getElementById("tabNewBtn").classList.add("active");
-        document.getElementById("tabListBtn").classList.remove("active");
-        document.getElementById("tabNewContent").style.display = "block";
-        document.getElementById("tabListContent").style.display = "none";
-      } else {
-        document.getElementById("tabNewBtn").classList.remove("active");
-        document.getElementById("tabListBtn").classList.add("active");
-        document.getElementById("tabNewContent").style.display = "none";
-        document.getElementById("tabListContent").style.display = "block";
-        renderList();
-      }
-      window.scrollTo(0, 0);
-      notifyPlatform();
-    }
-
-    document.getElementById("appointmentForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-
-      const newEvent = {
-        id: Date.now(),
-        title: document.getElementById("title").value,
-        date: document.getElementById("date").value,
-        time: document.getElementById("time").value,
-        duration: document.getElementById("duration").value,
-        clientName: document.getElementById("clientName").value || "Cliente",
-        clientPhone: document.getElementById("clientPhone").value || "",
-        notes: document.getElementById("notes").value || ""
-      };
-
-      appointments.unshift(newEvent);
-      localStorage.setItem("agenda_events", JSON.stringify(appointments));
-      updateCount();
-
-      sendChatConfirmation(newEvent);
-      switchTab('list');
-    });
-
-    function renderList() {
-      const container = document.getElementById("agendaList");
-      updateCount();
-
-      if (appointments.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding: 20px; color:#94a3b8; font-size:11px;">Nenhum compromisso marcado.</div>`;
-        return;
-      }
-
-      container.innerHTML = appointments.map(item => {
-        const [yyyy, mm, dd] = item.date.split('-');
-        return `
-          <div class="event-card">
-            <div class="event-card-header">
-              <span>${item.title}</span>
-              <span style="color:#1e40af;">${item.duration}m</span>
-            </div>
-            <div class="event-meta">
-              <span>🗓 ${dd}/${mm}/${yyyy} às ${item.time}</span>
-              <span>👤 ${item.clientName} ${item.clientPhone ? '(' + item.clientPhone + ')' : ''}</span>
-              ${item.notes ? `<span>📝 ${item.notes}</span>` : ''}
-            </div>
-            <div class="event-actions">
-              <button class="action-btn" onclick="sendChatConfirmationById(${item.id})">💬 Chat</button>
-              <button class="action-btn" onclick="openGoogleCalendarById(${item.id})">📅 Google</button>
-              <button class="action-btn" style="color:#ef4444;" onclick="deleteAppointment(${item.id})">🗑</button>
-            </div>
+    container.innerHTML = state.appointments.map(ev => {
+      const [y, m, d] = ev.date.split('-');
+      return `
+        <div class="event-item">
+          <div class="event-header">
+            <span>${ev.title}</span>
+            <span style="color:var(--primary)">${ev.duration}m</span>
           </div>
-        `;
-      }).join('');
+          <div class="event-meta">
+            <div>🗓 ${d}/${m}/${y} às <b>${ev.time}</b></div>
+            <div>👤 ${ev.clientName} · ${ev.clientPhone}</div>
+            ${ev.notes ? `<div>📝 ${ev.notes}</div>` : ''}
+          </div>
+          <div class="event-btns">
+            <button type="button" class="mini-btn" onclick="sendWhatsApp(${ev.id})">💬 Enviar WhatsApp</button>
+            <button type="button" class="mini-btn" onclick="openGoogle(${ev.id})">📅 Google Agenda</button>
+            <button type="button" class="mini-btn del" onclick="deleteEvent(${ev.id})">✕</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+    scheduleResize();
+  }
+
+  $('scheduleForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const newEv = {
+      id: Date.now(),
+      title: $('eventTitle').value,
+      date: $('eventDate').value,
+      time: $('eventTime').value,
+      duration: $('eventDuration').value,
+      email: $('eventEmail').value,
+      notes: $('eventNotes').value,
+      clientName: $('cust-name').textContent,
+      clientPhone: $('cust-phone').textContent
+    };
+
+    state.appointments.unshift(newEv);
+    localStorage.setItem("agenda_events", JSON.stringify(state.appointments));
+    updateCounts();
+
+    if (state.hasOmni && omni.ui?.toast) {
+      await omni.ui.toast('Agendamento salvo com sucesso!', 'success');
     }
 
-    function updateCount() {
-      document.getElementById("eventCount").innerText = appointments.length;
-    }
+    switchTab('list');
+  };
 
-    function deleteAppointment(id) {
-      if (confirm("Deseja cancelar este agendamento?")) {
-        appointments = appointments.filter(a => a.id !== id);
-        localStorage.setItem("agenda_events", JSON.stringify(appointments));
-        renderList();
+  function deleteEvent(id) {
+    state.appointments = state.appointments.filter(x => x.id !== id);
+    localStorage.setItem("agenda_events", JSON.stringify(state.appointments));
+    updateCounts();
+    renderAppointments();
+  }
+
+  async function sendWhatsApp(id) {
+    const ev = state.appointments.find(x => x.id === id);
+    if (!ev) return;
+
+    const [y, m, d] = ev.date.split('-');
+    const msg = `📅 *Agendamento Confirmado!*\n\nOlá, ${ev.clientName}!\nSeu horário para *${ev.title}* está marcado:\n🗓 *Data:* ${d}/${m}/${y}\n⏰ *Horário:* ${ev.time}\n⏱ *Duração:* ${ev.duration} min\n\nQualquer dúvida, estamos à disposição!`;
+
+    if (state.hasOmni && state.chat?.id) {
+      try {
+        await omni.chats.sendMessage(Number(state.chat.id), { text: msg });
+        if (omni.ui?.toast) await omni.ui.toast('Mensagem enviada no chat!', 'success');
+      } catch (err) {
+        alert('Erro ao enviar: ' + err.message);
       }
+    } else {
+      window.parent.postMessage({ type: "INSERT_MESSAGE", text: msg }, "*");
+      alert('Texto pronto! Injetado no chat.');
+    }
+  }
+
+  function openGoogle(id) {
+    const ev = state.appointments.find(x => x.id === id);
+    if (!ev) return;
+
+    const start = new Date(`${ev.date}T${ev.time}:00`);
+    const end = new Date(start.getTime() + parseInt(ev.duration, 10) * 60000);
+    const format = (d) => d.toISOString().replace(/-|:|\.\d+/g, '');
+    const dates = `${format(start)}/${format(end)}`;
+
+    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(ev.title)}&dates=${dates}&details=${encodeURIComponent(ev.notes || '')}&add=${encodeURIComponent(ev.email || '')}`;
+    window.open(url, '_blank');
+  }
+
+  // Inicialização padrão
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  $('eventDate').value = d.toISOString().split('T')[0];
+  $('eventTime').value = '14:00';
+  updateCounts();
+
+  // Boot Oficial AtenderBem
+  async function boot() {
+    if (!state.hasOmni) {
+      $('sdk-state').textContent = 'Modo isolado';
+      await refreshChat();
+      scheduleResize();
+      return;
     }
 
-    function sendChatConfirmation(item) {
-      const [yyyy, mm, dd] = item.date.split('-');
-      const text = `📅 *Confirmação de Agendamento*\n\nOlá, ${item.clientName}!\nSeu horário para *${item.title}* está marcado:\n🗓 Data: *${dd}/${mm}/${yyyy}*\n⏰ Horário: *${item.time}*\n\nQualquer imprevisto nos avise!`;
-      window.parent.postMessage({ type: "INSERT_MESSAGE", text: text }, "*");
-    }
+    $('sdk-state').textContent = 'Detectado';
+    omni.ready(async (context) => {
+      state.ready = true;
+      $('sdk-state').textContent = 'Conectado';
+      omni.on('chatListChanged', refreshChat);
+      await refreshChat();
+      scheduleResize();
+    });
+  }
 
-    function sendChatConfirmationById(id) {
-      const item = appointments.find(a => a.id === id);
-      if (item) sendChatConfirmation(item);
-    }
-
-    function openGoogleCalendarById(id) {
-      const item = appointments.find(a => a.id === id);
-      if (!item) return;
-
-      const start = new Date(`${item.date}T${item.time}:00`);
-      const end = new Date(start.getTime() + parseInt(item.duration, 10) * 60000);
-      const format = (d) => d.toISOString().replace(/-|:|\.\d+/g, '');
-
-      const dates = `${format(start)}/${format(end)}`;
-      const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(item.title)}&dates=${dates}&details=${encodeURIComponent(item.notes || '')}`;
-      window.open(url, "_blank");
-    }
-
-    updateCount();
-  </script>
+  if ('ResizeObserver' in window) new ResizeObserver(scheduleResize).observe(document.body);
+  setInterval(resizeHost, 2000);
+  boot();
+</script>
 </body>
 </html>
