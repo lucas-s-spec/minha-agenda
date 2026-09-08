@@ -4,10 +4,11 @@
   "name": "Minha Agenda Pessoal",
   "version": "1.0.0",
   "description": "Agenda integrada para marcação de reuniões e consultas",
-  "contributions": {
-    "sidebar": {
+  "contributions": [
+    {
+      "target": "sidebar",
       "title": "Agenda",
       "entrypoint": "index.html"
     }
-  }
+  ]
 }
