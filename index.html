@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Minha Agenda Pessoal</title>
+  <!-- Script oficial Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; min-height: 100%; }
@@ -40,7 +42,7 @@
     .hero h1 { font-size: 16px; margin: 0 0 4px; }
     .hero p { margin: 0; opacity: .92; font-size: 11px; }
     .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-    .status-chip { background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.28); border-radius: 8px; padding: 7px; }
+    .status-chip { background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.28); border-radius: 8px; padding: 7px; cursor: pointer; }
     .status-chip b { display: block; font-size: 10px; opacity: .8; text-transform: uppercase; }
     .status-chip span { display: block; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(15,23,42,.06); }
@@ -52,16 +54,10 @@
     .value { color: #0f172a; font-weight: 800; text-align: right; overflow-wrap: anywhere; }
     .notice { border-radius: 8px; padding: 9px; margin: 8px 0; font-size: 11px; }
     .notice.info { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
-    .notice.warn { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
-    .notice.ok { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
-    .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
     button, select, input, textarea { font-family: inherit; }
     .btn { width: 100%; min-height: 36px; border: 0; border-radius: 8px; color: white; background: var(--primary); font-weight: 800; font-size: 12px; cursor: pointer; padding: 8px 9px; }
     .btn:hover { filter: brightness(.96); }
-    .btn.secondary { background: #475569; }
     .btn.success { background: var(--success); }
-    .btn.warn { background: var(--warning); }
-    .btn.danger { background: var(--danger); }
     .btn.outline { color: var(--primary); background: white; border: 1px solid var(--primary); }
     .tabs { display: grid; grid-template-columns: 1fr 1fr; background: #e2e8f0; padding: 3px; border-radius: 8px; margin-bottom: 12px; gap: 4px; }
     .tab-btn { border: 0; background: transparent; padding: 7px; font-weight: 800; font-size: 12px; color: var(--muted); border-radius: 6px; cursor: pointer; }
@@ -85,12 +81,15 @@
 <div class="app" id="app">
   <section class="hero">
     <h1>Minha Agenda Pessoal</h1>
-    <p>Agendamento de reuniões e consultas sincronizado com o Google Calendar.</p>
+    <p>Agendamento integrado ao AtenderBem e Google Calendar API.</p>
     <div class="status-grid">
       <div class="status-chip"><b>SDK</b><span id="sdk-state">Inicializando</span></div>
       <div class="status-chip"><b>Chat</b><span id="chat-state">Aguardando</span></div>
+      <div class="status-chip" onclick="connectGoogleAccount()" title="Clique para conectar a conta Google">
+        <b>Google Agenda</b>
+        <span id="gcal-state">Conectar</span>
+      </div>
       <div class="status-chip"><b>Agendados</b><span id="count-state">0 marcados</span></div>
-      <div class="status-chip"><b>Google Meet</b><span>Disponível</span></div>
     </div>
   </section>
 
@@ -150,14 +149,17 @@
           <textarea id="eventNotes" rows="2" placeholder="Link da videochamada ou pauta"></textarea>
         </div>
 
-        <button type="submit" class="btn success" style="margin-top:6px">Salvar Compromisso</button>
+        <button type="submit" class="btn success" style="margin-top:6px">Salvar e Sincronizar no Google</button>
       </form>
     </section>
   </div>
 
   <div id="tabListContent" style="display:none">
     <section class="card">
-      <div class="card-title"><span>📋 Lista de Compromissos</span></div>
+      <div class="card-title">
+        <span>📋 Lista de Compromissos</span>
+        <button type="button" class="btn outline" style="width:auto;min-height:26px;padding:2px 8px;font-size:11px" onclick="fetchGoogleEvents()">Buscar do Google</button>
+      </div>
       <div id="eventsList"></div>
     </section>
   </div>
@@ -166,16 +168,21 @@
 </div>
 
 <script>
+  const GOOGLE_CLIENT_ID = '92440529523-fgo3hm40m24v51mj2u9a1mfs32hki5ca.apps.googleusercontent.com';
+  const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/calendar.events';
+
+  let tokenClient = null;
+  let googleAccessToken = localStorage.getItem('gcal_token') || null;
+
   const state = {
     hasOmni: typeof window.omni !== 'undefined',
     ready: false,
     chat: null,
-    appointments: JSON.parse(localStorage.getItem("agenda_events") || "[]")
+    appointments: JSON.parse(localStorage.getItem('agenda_events') || '[]')
   };
 
   const $ = (id) => document.getElementById(id);
 
-  // Redimensionador idêntico ao da FastCorte para expandir o iframe pai
   function resizeHost() {
     if (!state.hasOmni || !omni.ui || !omni.ui.resize) return;
     requestAnimationFrame(() => {
@@ -195,6 +202,140 @@
     setTimeout(resizeHost, 800);
   }
 
+  function initGoogleAuth() {
+    if (!window.google?.accounts?.oauth2) {
+      setTimeout(initGoogleAuth, 400);
+      return;
+    }
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: GOOGLE_SCOPES,
+      callback: (tokenResponse) => {
+        if (tokenResponse && tokenResponse.access_token) {
+          googleAccessToken = tokenResponse.access_token;
+          localStorage.setItem('gcal_token', googleAccessToken);
+          updateGoogleStatus(true);
+          if (state.hasOmni && omni.ui?.toast) {
+            omni.ui.toast('Google Agenda conectado com sucesso!', 'success');
+          }
+          fetchGoogleEvents();
+        }
+      }
+    });
+  }
+
+  function connectGoogleAccount() {
+    if (!tokenClient) initGoogleAuth();
+    if (tokenClient) {
+      tokenClient.requestAccessToken({ prompt: 'consent' });
+    }
+  }
+
+  function updateGoogleStatus(connected) {
+    const el = $('gcal-state');
+    if (connected) {
+      el.textContent = 'Conectado';
+      el.style.color = '#86efac';
+    } else {
+      el.textContent = 'Conectar';
+      el.style.color = 'white';
+    }
+  }
+
+  async function pushToGoogleCalendar(appointment) {
+    if (!googleAccessToken) return false;
+
+    const startIso = `${appointment.date}T${appointment.time}:00`;
+    const startDate = new Date(startIso);
+    const endDate = new Date(startDate.getTime() + Number(appointment.duration) * 60000);
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    const payload = {
+      summary: appointment.title,
+      description: `${appointment.notes || ''}\n\nCliente: ${appointment.clientName} (${appointment.clientPhone})`,
+      start: { dateTime: startDate.toISOString(), timeZone: tz },
+      end: { dateTime: endDate.toISOString(), timeZone: tz },
+      attendees: appointment.email ? [{ email: appointment.email }] : []
+    };
+
+    try {
+      const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${googleAccessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.status === 401) {
+        googleAccessToken = null;
+        localStorage.removeItem('gcal_token');
+        updateGoogleStatus(false);
+        connectGoogleAccount();
+        return false;
+      }
+
+      return res.ok;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  }
+
+  async function fetchGoogleEvents() {
+    if (!googleAccessToken) return;
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const url = new URL('https://www.googleapis.com/calendar/v3/calendars/primary/events');
+    url.searchParams.set('timeMin', now.toISOString());
+    url.searchParams.set('singleEvents', 'true');
+    url.searchParams.set('orderBy', 'startTime');
+    url.searchParams.set('maxResults', '15');
+
+    try {
+      const res = await fetch(url.toString(), {
+        headers: {
+          'Authorization': `Bearer ${googleAccessToken}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (res.status === 401) {
+        googleAccessToken = null;
+        localStorage.removeItem('gcal_token');
+        updateGoogleStatus(false);
+        return;
+      }
+
+      const data = await res.json();
+      if (data.items) {
+        state.appointments = data.items.map(item => {
+          const start = new Date(item.start.dateTime || item.start.date);
+          const end = new Date(item.end.dateTime || item.end.date);
+          const dur = Math.round((end - start) / 60000) || 30;
+          return {
+            id: item.id,
+            title: item.summary || 'Sem título',
+            date: start.toISOString().split('T')[0],
+            time: start.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+            duration: dur,
+            clientName: 'Google Agenda',
+            clientPhone: '-',
+            notes: item.description || ''
+          };
+        });
+        localStorage.setItem('agenda_events', JSON.stringify(state.appointments));
+        updateCounts();
+        renderAppointments();
+      }
+    } catch (err) {
+      console.error('Erro ao buscar eventos:', err);
+    }
+  }
+
   function renderCustomer() {
     const chat = state.chat;
     $('chat-state').textContent = chat?.id ? `#${chat.id}` : 'Sem chat';
@@ -212,7 +353,7 @@
 
   async function refreshChat() {
     if (!state.hasOmni) {
-      state.chat = { id: 101, contact: { name: 'Lucas Teste', phone: '(38) 99999-9999' } };
+      state.chat = { id: 101, contact: { name: 'Cliente Teste', phone: '(38) 99999-9999' } };
       renderCustomer();
       return;
     }
@@ -251,7 +392,7 @@
   function renderAppointments() {
     const container = $('eventsList');
     if (!state.appointments.length) {
-      container.innerHTML = '<div class="notice info">Nenhum compromisso marcado até o momento.</div>';
+      container.innerHTML = '<div class="notice info">Nenhum compromisso encontrado.</div>';
       return;
     }
 
@@ -269,9 +410,8 @@
             ${ev.notes ? `<div>📝 ${ev.notes}</div>` : ''}
           </div>
           <div class="event-btns">
-            <button type="button" class="mini-btn" onclick="sendWhatsApp(${ev.id})">💬 Enviar WhatsApp</button>
-            <button type="button" class="mini-btn" onclick="openGoogle(${ev.id})">📅 Google Agenda</button>
-            <button type="button" class="mini-btn del" onclick="deleteEvent(${ev.id})">✕</button>
+            <button type="button" class="mini-btn" onclick="sendWhatsApp('${ev.id}')">💬 Enviar WhatsApp</button>
+            <button type="button" class="mini-btn del" onclick="deleteEvent('${ev.id}')">✕</button>
           </div>
         </div>
       `;
@@ -282,7 +422,7 @@
   $('scheduleForm').onsubmit = async (e) => {
     e.preventDefault();
     const newEv = {
-      id: Date.now(),
+      id: String(Date.now()),
       title: $('eventTitle').value,
       date: $('eventDate').value,
       time: $('eventTime').value,
@@ -294,25 +434,32 @@
     };
 
     state.appointments.unshift(newEv);
-    localStorage.setItem("agenda_events", JSON.stringify(state.appointments));
+    localStorage.setItem('agenda_events', JSON.stringify(state.appointments));
     updateCounts();
 
-    if (state.hasOmni && omni.ui?.toast) {
-      await omni.ui.toast('Agendamento salvo com sucesso!', 'success');
+    if (googleAccessToken) {
+      const ok = await pushToGoogleCalendar(newEv);
+      if (ok && state.hasOmni && omni.ui?.toast) {
+        await omni.ui.toast('Agendado e sincronizado no Google Calendar!', 'success');
+      }
+    } else {
+      if (state.hasOmni && omni.ui?.toast) {
+        await omni.ui.toast('Salvo localmente. Conecte ao Google no topo.', 'warn');
+      }
     }
 
     switchTab('list');
   };
 
   function deleteEvent(id) {
-    state.appointments = state.appointments.filter(x => x.id !== id);
-    localStorage.setItem("agenda_events", JSON.stringify(state.appointments));
+    state.appointments = state.appointments.filter(x => String(x.id) !== String(id));
+    localStorage.setItem('agenda_events', JSON.stringify(state.appointments));
     updateCounts();
     renderAppointments();
   }
 
   async function sendWhatsApp(id) {
-    const ev = state.appointments.find(x => x.id === id);
+    const ev = state.appointments.find(x => String(x.id) === String(id));
     if (!ev) return;
 
     const [y, m, d] = ev.date.split('-');
@@ -323,36 +470,20 @@
         await omni.chats.sendMessage(Number(state.chat.id), { text: msg });
         if (omni.ui?.toast) await omni.ui.toast('Mensagem enviada no chat!', 'success');
       } catch (err) {
-        alert('Erro ao enviar: ' + err.message);
+        console.error(err);
       }
-    } else {
-      window.parent.postMessage({ type: "INSERT_MESSAGE", text: msg }, "*");
-      alert('Texto pronto! Injetado no chat.');
     }
   }
 
-  function openGoogle(id) {
-    const ev = state.appointments.find(x => x.id === id);
-    if (!ev) return;
-
-    const start = new Date(`${ev.date}T${ev.time}:00`);
-    const end = new Date(start.getTime() + parseInt(ev.duration, 10) * 60000);
-    const format = (d) => d.toISOString().replace(/-|:|\.\d+/g, '');
-    const dates = `${format(start)}/${format(end)}`;
-
-    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(ev.title)}&dates=${dates}&details=${encodeURIComponent(ev.notes || '')}&add=${encodeURIComponent(ev.email || '')}`;
-    window.open(url, '_blank');
-  }
-
-  // Inicialização padrão
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  $('eventDate').value = d.toISOString().split('T')[0];
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  $('eventDate').value = tomorrow.toISOString().split('T')[0];
   $('eventTime').value = '14:00';
   updateCounts();
+  if (googleAccessToken) updateGoogleStatus(true);
 
-  // Boot Oficial AtenderBem
   async function boot() {
+    initGoogleAuth();
     if (!state.hasOmni) {
       $('sdk-state').textContent = 'Modo isolado';
       await refreshChat();
@@ -361,7 +492,7 @@
     }
 
     $('sdk-state').textContent = 'Detectado';
-    omni.ready(async (context) => {
+    omni.ready(async () => {
       state.ready = true;
       $('sdk-state').textContent = 'Conectado';
       omni.on('chatListChanged', refreshChat);
