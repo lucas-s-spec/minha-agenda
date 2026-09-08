@@ -16,7 +16,6 @@
       --text-main: #1e293b;
       --text-muted: #64748b;
       --border: #e2e8f0;
-      --accent: #10b981;
       --radius: 12px;
     }
 
@@ -29,21 +28,24 @@
 
     html, body {
       width: 100%;
-      min-height: 100vh;
+      height: auto;
       background-color: var(--bg);
       color: var(--text-main);
+      overflow-y: visible;
       overflow-x: hidden;
     }
 
     .container {
       width: 100%;
-      padding: 14px;
+      padding: 12px;
       display: flex;
       flex-direction: column;
       gap: 12px;
+      /* Garante que o iframe tenha espaço visível de sobra */
+      min-height: 680px; 
     }
 
-    /* Card de Topo Estilo FastCorte */
+    /* Hero Banner */
     .hero-card {
       background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
       color: #ffffff;
@@ -124,7 +126,7 @@
       color: var(--text-main);
     }
 
-    /* Alternador de Visualização */
+    /* Alternador de Abas */
     .tabs {
       display: flex;
       background: #e2e8f0;
@@ -155,7 +157,6 @@
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     }
 
-    /* Inputs e Controles */
     .field-group {
       display: flex;
       flex-direction: column;
@@ -190,7 +191,6 @@
       box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.12);
     }
 
-    /* Botões */
     .btn {
       display: flex;
       align-items: center;
@@ -211,10 +211,6 @@
       color: white;
     }
 
-    .btn-primary:hover {
-      background: #1e3a8a;
-    }
-
     .btn-outline {
       background: #f8fafc;
       border: 1px solid var(--border);
@@ -225,7 +221,6 @@
       cursor: pointer;
     }
 
-    /* Card do Evento na Lista */
     .event-card {
       background: #ffffff;
       border: 1px solid var(--border);
@@ -278,8 +273,8 @@
 </head>
 <body>
 
-  <div class="container">
-    <!-- Hero Banner no formato oficial FastCorte -->
+  <div class="container" id="appRoot">
+    <!-- Hero Banner -->
     <div class="hero-card">
       <h2>Agendamento Google Calendar</h2>
       <p>Gerenciador de compromissos, consultas e reuniões integrado ao atendimento.</p>
@@ -384,7 +379,18 @@
     let activeClient = { name: '', phone: '' };
     let appointments = JSON.parse(localStorage.getItem("agenda_events") || "[]");
 
-    // Integração postMessage com a plataforma
+    // Comunica a altura exata do documento para o iframe pai redimensionar
+    function notifyHeight() {
+      const height = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight, 700);
+      window.parent.postMessage({ type: "RESIZE", height: height }, "*");
+      window.parent.postMessage({ type: "SET_HEIGHT", height: height }, "*");
+    }
+
+    // Monitora qualquer mudança de tamanho no DOM
+    const resizeObserver = new ResizeObserver(() => notifyHeight());
+    resizeObserver.observe(document.getElementById("appRoot"));
+
+    // Eventos da plataforma
     window.addEventListener("message", (event) => {
       const { type, data } = event.data || {};
       if (type === "CHAT_SELECTED" || type === "CONTACT_LOADED" || type === "ON_CHAT_OPEN") {
@@ -396,8 +402,11 @@
           useClientData();
         }
       }
+      notifyHeight();
     });
+
     window.parent.postMessage({ type: "EXTENSION_READY" }, "*");
+    setTimeout(notifyHeight, 300);
 
     function useClientData() {
       if (activeClient.name) document.getElementById("clientName").value = activeClient.name;
@@ -407,7 +416,6 @@
       }
     }
 
-    // Inicializa data para amanhã
     const initDate = () => {
       const d = new Date();
       d.setDate(d.getDate() + 1);
@@ -429,6 +437,7 @@
         document.getElementById("tabListContent").style.display = "block";
         renderList();
       }
+      setTimeout(notifyHeight, 100);
     }
 
     document.getElementById("appointmentForm").addEventListener("submit", (e) => {
@@ -494,13 +503,13 @@
         appointments = appointments.filter(a => a.id !== id);
         localStorage.setItem("agenda_events", JSON.stringify(appointments));
         renderList();
+        setTimeout(notifyHeight, 100);
       }
     }
 
     function sendChatConfirmation(item) {
       const [yyyy, mm, dd] = item.date.split('-');
       const text = `📅 *Confirmação de Agendamento*\n\nOlá, ${item.clientName}!\nSeu horário para *${item.title}* está confirmado:\n🗓 Data: *${dd}/${mm}/${yyyy}*\n⏰ Horário: *${item.time}*\n\nQualquer dúvida, estamos à disposição!`;
-
       window.parent.postMessage({ type: "INSERT_MESSAGE", text: text }, "*");
     }
 
@@ -519,7 +528,6 @@
 
       const dates = `${format(start)}/${format(end)}`;
       const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(item.title)}&dates=${dates}&details=${encodeURIComponent(item.notes || '')}`;
-
       window.open(url, "_blank");
     }
 
