@@ -1,0 +1,13 @@
+{
+    "id": "agenda.pessoal.atendimento",
+    "name": "Minha Agenda Pessoal",
+    "version": "1.0.0",
+    "description": "Agenda pessoal integrada para agendamentos e reuniões.",
+    "entrypoint": "index.html",
+    "target": "sidebar",
+    "permissions": [
+        "chat:read",
+        "chat:write",
+        "contact:read"
+    ]
+}
