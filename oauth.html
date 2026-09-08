@@ -57,24 +57,24 @@
 
     function initClient() {
       if (!window.google?.accounts?.oauth2) {
-        setTimeout(initClient, 300);
+        setTimeout(initClient, 200);
         return;
       }
       tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID,
         scope: SCOPES,
+        use_fedcm_for_prompt: false,
         callback: (response) => {
           if (response?.error) {
-            document.getElementById('msg').innerText = 'Erro: ' + response.error;
+            document.getElementById('msg').innerText = 'Erro: ' + (response.error_description || response.error);
             return;
           }
           if (response?.access_token) {
             document.getElementById('msg').innerText = 'Sucesso! Conectando...';
-            // Devolve o token para a aba que abriu o popup
             if (window.opener) {
               window.opener.postMessage({ type: 'GOOGLE_AUTH_SUCCESS', token: response.access_token }, '*');
             }
-            setTimeout(() => window.close(), 1000);
+            setTimeout(() => window.close(), 800);
           }
         }
       });
@@ -82,8 +82,11 @@
     }
 
     function startLogin() {
-      if (!tokenClient) initClient();
-      tokenClient.requestAccessToken({ prompt: 'consent' });
+      if (!tokenClient) {
+        initClient();
+      }
+      // prompt vazio ou consent direto para não travar no seletor
+      tokenClient.requestAccessToken({ prompt: '' });
     }
 
     window.onload = initClient;
