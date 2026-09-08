@@ -231,7 +231,10 @@
   });
 
   function connectGoogleAccount() {
-    const oauthUrl = 'https://raw.githack.com/lucas-s-spec/minha-agenda/main/oauth.html';
+    const match = window.location.href.match(/minha-agenda\/([a-f0-9]+)\//);
+    const commitHash = match ? match[1] : 'f281a6c';
+    const oauthUrl = `https://raw.githack.com/lucas-s-spec/minha-agenda/${commitHash}/oauth.html`;
+
     const popup = window.open(oauthUrl, 'google_oauth_popup', 'width=460,height=560');
     if (!popup) {
       alert('O navegador bloqueou a abertura do popup. Permita popups para este site.');
