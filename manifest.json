@@ -9,7 +9,9 @@
       "id": "agenda-painel",
       "type": "chatPanel",
       "title": "Agenda",
-      "url": "index.html"
+      "url": "index.html",
+      "height": 760,
+      "width": "100%"
     }
   ]
 }
