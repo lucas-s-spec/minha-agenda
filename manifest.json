@@ -4,6 +4,11 @@
   "name": "Minha Agenda Pessoal",
   "version": "1.0.0",
   "description": "Agenda integrada para marcação de reuniões e consultas",
+  "permissions": [
+    "https://www.googleapis.com/*",
+    "https://accounts.google.com/*"
+  ],
+  "csp": "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; connect-src * https://raw.githack.com https://fastcorte.atenderbem.com https://www.googleapis.com https://accounts.google.com;",
   "contributions": [
     {
       "id": "agenda-painel",
