@@ -2,36 +2,94 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Processando autorização...</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conectar Google Agenda</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     body {
-      font-family: sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       display: flex;
       align-items: center;
       justify-content: center;
       height: 100vh;
       margin: 0;
-      background: #f8fafc;
-      color: #0f172a;
+      background: #0f172a;
+      color: white;
     }
+    .card {
+      background: #1e293b;
+      padding: 32px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      max-width: 360px;
+      width: 90%;
+    }
+    h2 { font-size: 18px; margin-bottom: 8px; }
+    p { font-size: 13px; color: #94a3b8; margin-bottom: 24px; line-height: 1.4; }
+    #btn-auth {
+      background: #2563eb;
+      color: white;
+      border: 0;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+    }
+    #btn-auth:hover { background: #1d4ed8; }
+    #status { margin-top: 16px; font-size: 12px; color: #cbd5e1; }
   </style>
 </head>
 <body>
-  <p>Conectando ao Google Agenda... Esta janela fechará em instantes.</p>
 
-  <script>
-    const hash = window.location.hash.substring(1);
-    const params = new URLSearchParams(hash);
-    const token = params.get('access_token');
+<div class="card">
+  <h2>Google Agenda</h2>
+  <p>Clique abaixo para sincronizar seus agendamentos com a extensão.</p>
+  <button id="btn-auth" onclick="requestGoogleAccess()">Autorizar Acesso</button>
+  <div id="status">Aguardando...</div>
+</div>
 
-    if (token) {
-      if (window.opener) {
-        window.opener.postMessage({ type: 'GOOGLE_AUTH_SUCCESS', token: token }, '*');
-      }
-      setTimeout(() => window.close(), 500);
-    } else {
-      document.body.innerHTML = '<p>Erro na autorização ou token não retornado. Pode fechar esta janela.</p>';
+<script>
+  const CLIENT_ID = '92440529523-fgo3hm40m24v51mj2u9a1mfs32hki5ca.apps.googleusercontent.com';
+  let client;
+
+  function initGis() {
+    if (!window.google?.accounts?.oauth2) {
+      setTimeout(initGis, 100);
+      return;
     }
-  </script>
+    client = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: 'https://www.googleapis.com/auth/calendar.events',
+      callback: (tokenResponse) => {
+        if (tokenResponse && tokenResponse.access_token) {
+          document.getElementById('status').innerText = 'Sucesso! Sincronizando...';
+          if (window.opener) {
+            window.opener.postMessage({
+              type: 'GOOGLE_AUTH_SUCCESS',
+              token: tokenResponse.access_token
+            }, '*');
+          }
+          setTimeout(() => window.close(), 600);
+        } else {
+          document.getElementById('status').innerText = 'Erro ao obter token de acesso.';
+        }
+      }
+    });
+    document.getElementById('status').innerText = 'Pronto para conectar.';
+  }
+
+  function requestGoogleAccess() {
+    if (!client) {
+      initGis();
+    }
+    client.requestAccessToken({ prompt: 'consent' });
+  }
+
+  window.onload = initGis;
+</script>
+
 </body>
 </html>
