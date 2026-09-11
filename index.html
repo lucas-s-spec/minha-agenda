@@ -231,22 +231,7 @@
   });
 
   function connectGoogleAccount() {
-    const clientId = '92440529523-fgo3hm40m24v51mj2u9a1mfs32hki5ca.apps.googleusercontent.com';
-    const redirectUri = 'https://lucas-s-spec.github.io/minha-agenda/oauth.html';
-    const scope = 'https://www.googleapis.com/auth/calendar.events';
-
-    const params = new URLSearchParams({
-      client_id: clientId,
-      redirect_uri: redirectUri,
-      response_type: 'token',
-      scope: scope,
-      prompt: 'consent',
-      login_hint: 'jwlucasduraes@gmail.com'
-    });
-
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
-
-    window.open(authUrl, '_blank');
+    window.open('https://lucas-s-spec.github.io/minha-agenda/oauth.html', '_blank');
   }
 
   function updateGoogleStatus(connected) {
