@@ -1,42 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conectar Google Agenda</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background: #0f172a;
+      color: white;
+    }
+    .card {
+      background: #1e293b;
+      padding: 32px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      max-width: 380px;
+      width: 90%;
+    }
+    h2 { font-size: 18px; margin-bottom: 8px; }
+    p { font-size: 13px; color: #94a3b8; margin-bottom: 24px; line-height: 1.4; }
+    .btn {
+      display: inline-block;
+      background: #2563eb;
+      color: white;
+      text-decoration: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .btn:hover { background: #1d4ed8; }
+    #status { margin-top: 16px; font-size: 13px; color: #38bdf8; font-weight: bold; }
+    .token-box {
+      margin-top: 15px;
+      padding: 10px;
+      background: #0f172a;
+      border-radius: 6px;
+      word-break: break-all;
+      font-size: 11px;
+      color: #a7f3d0;
+      text-align: left;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h2>Google Agenda</h2>
+  <p id="desc">Clique abaixo para conectar sem bloqueios de popup.</p>
+  <a id="auth-link" class="btn" href="#">Entrar com Google</a>
+  <div id="status">Verificando...</div>
+  <div id="token-display" class="token-box"></div>
+</div>
+
 <script>
   const CLIENT_ID = '92440529523-6preq231mlhuecq5nrrk66eu8p1h0617.apps.googleusercontent.com';
-  let client;
+  const REDIRECT_URI = 'https://lucas-s-spec.github.io/minha-agenda/oauth.html';
+  const SCOPES = 'https://www.googleapis.com/auth/calendar.events';
 
-  function initGis() {
-    if (!window.google?.accounts?.oauth2) {
-      setTimeout(initGis, 100);
-      return;
-    }
-    client = google.accounts.oauth2.initTokenClient({
-      client_id: CLIENT_ID,
-      scope: 'https://www.googleapis.com/auth/calendar.events',
-      ux_mode: 'popup',
-      callback: (tokenResponse) => {
-        if (tokenResponse && tokenResponse.access_token) {
-          document.getElementById('status').innerText = 'Sucesso! Sincronizando...';
-          localStorage.setItem('gcal_token', tokenResponse.access_token);
-          if (window.opener) {
-            window.opener.postMessage({
-              type: 'GOOGLE_AUTH_SUCCESS',
-              token: tokenResponse.access_token
-            }, '*');
-          }
-          setTimeout(() => window.close(), 800);
-        } else {
-          document.getElementById('status').innerText = 'Erro ao obter token de acesso.';
-        }
+  // Monta a URL de autenticação direta em página inteira
+  const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({
+    client_id: CLIENT_ID,
+    redirect_uri: REDIRECT_URI,
+    response_type: 'token',
+    scope: SCOPES,
+    include_granted_scopes: 'true',
+    prompt: 'select_account'
+  }).toString();
+
+  document.getElementById('auth-link').href = authUrl;
+
+  // Verifica se o Google já redirecionou de volta com o token no Hash (#access_token=...)
+  function checkReturnedToken() {
+    const hash = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    const token = params.get('access_token');
+
+    if (token) {
+      document.getElementById('desc').innerText = 'Conta conectada com sucesso!';
+      document.getElementById('auth-link').style.display = 'none';
+      document.getElementById('status').innerText = '✓ Token gerado com sucesso!';
+      
+      const tokenBox = document.getElementById('token-display');
+      tokenBox.style.display = 'block';
+      tokenBox.innerHTML = '<b>Seu Token:</b><br>' + token + '<br><br><small>Copie este token se precisar colar manualmente, ou retorne à plataforma AtenderBem.</small>';
+
+      // Envia via postMessage para a janela-mãe se houver
+      if (window.opener) {
+        window.opener.postMessage({ type: 'GOOGLE_AUTH_SUCCESS', token: token }, '*');
+        setTimeout(() => window.close(), 1500);
       }
-    });
-    document.getElementById('status').innerText = 'Pronto para conectar.';
-  }
-
-  function requestGoogleAccess() {
-    if (!client) {
-      initGis();
+    } else {
+      document.getElementById('status').innerText = 'Pronto para autenticar.';
     }
-    // Se o popup bloquear foco, use o prompt select_account
-    client.requestAccessToken({ prompt: 'select_account' });
   }
 
-  window.onload = initGis;
+  window.onload = checkReturnedToken;
 </script>
+
+</body>
+</html>
