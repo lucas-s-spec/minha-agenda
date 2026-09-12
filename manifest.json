@@ -1,19 +1,18 @@
 {
   "manifestVersion": 1,
   "id": "agenda.pessoal",
+  "version": "2.0.0",
   "name": "Minha Agenda Pessoal",
-  "version": "1.0.0",
-  "description": "Agenda integrada para marcação de reuniões e consultas",
-  "permissions": [
-    "https://www.googleapis.com/*",
-    "https://accounts.google.com/*"
-  ],
-  "csp": "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; connect-src * https://raw.githack.com https://fastcorte.atenderbem.com https://www.googleapis.com https://accounts.google.com;",
+  "description": "Agenda pessoal integrada ao Google Calendar: veja e crie compromissos direto do atendimento.",
   "contributions": [
     {
-      "id": "agenda-painel",
+      "id": "agenda_panel",
       "type": "chatPanel",
-      "title": "Agenda",
+      "title": {
+        "pt-BR": "Minha Agenda",
+        "en": "My Schedule"
+      },
+      "icon": "fal/calendar-days",
       "url": "index.html"
     }
   ]
