@@ -4,6 +4,7 @@
   "version": "2.0.0",
   "name": "Minha Agenda Pessoal",
   "description": "Agenda pessoal integrada ao Google Calendar: veja e crie compromissos direto do atendimento.",
+  "csp": "connect-src https://raw.githack.com https://fastcorte.atenderbem.com https://script.google.com https://script.googleusercontent.com;",
   "contributions": [
     {
       "id": "agenda_panel",
