@@ -116,8 +116,11 @@
 <div class="footer-space"></div>
 
 <script>
-  // Preenchido após o deploy do Google Apps Script (Extensões > Apps Script).
-  const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbx_52E1hK8Ck6UqgZA0kgWrYTK8BmYzDpAid7QMFyt-LbIYUGRAPCbGKmdU6RMSmzbC/exec';
+  // Proxy dentro do proprio dominio do atenderbem (o CSP da extensao so libera
+  // fastcorte.atenderbem.com e raw.githack.com - por isso nao falamos direto
+  // com script.google.com/Cloudflare a partir do navegador).
+  const BACKEND_GET_URL = 'https://fastcorte.atenderbem.com/webhookcapture/capture/agenda-pessoal-get';
+  const BACKEND_POST_URL = 'https://fastcorte.atenderbem.com/webhookcapture/capture/agenda-pessoal-post';
   const BACKEND_TOKEN = 'b5b54de57f01b1189be0d911e0bbd2b154e4bcc1';
 
   const state = { hasOmni: typeof window.omni !== 'undefined', chat: null, events: [] };
@@ -179,9 +182,8 @@
 
   async function backendCall(action, opts) {
     opts = opts || {};
-    if (!BACKEND_URL || BACKEND_URL.indexOf('http') !== 0) throw new Error('Backend não configurado ainda.');
     if (opts.method === 'POST') {
-      const res = await fetch(BACKEND_URL, {
+      const res = await fetch(BACKEND_POST_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(Object.assign({ token: BACKEND_TOKEN }, opts.body))
@@ -189,7 +191,7 @@
       return res.json();
     }
     const qs = new URLSearchParams(Object.assign({ token: BACKEND_TOKEN, action: action }, opts.params || {}));
-    const res = await fetch(BACKEND_URL + '?' + qs.toString());
+    const res = await fetch(BACKEND_GET_URL + '?' + qs.toString());
     return res.json();
   }
 
